@@ -22,7 +22,8 @@ type TrainingJob = {
   name: string;
 };
 
-const API_BASE = 'http://localhost:8000/api/v1';
+// URL dinámica basada en las variables de entorno de Vite (Render / Local)
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
 export default function ModelRegistry() {
   const [search, setSearch] = useState('');
@@ -83,7 +84,6 @@ export default function ModelRegistry() {
                        model.status === 'Revisado' ? 'Aprobado' :
                        model.status === 'Aprobado' ? 'Retirado' : 'Borrador';
     try {
-      // Re-registramos o actualizamos mandando un nuevo POST o mediante endpoint equivalente
       const payload = {
         name: model.name,
         family: model.family,
@@ -94,7 +94,6 @@ export default function ModelRegistry() {
         metadata_json: model.metadata_json
       };
       
-      // Como el backend permite crear/eliminar, eliminamos y recreamos o actualizamos (o puedes usar un patch si lo creas en main.py)
       await fetch(`${API_BASE}/models/${model.id}`, { method: 'DELETE' });
       const res = await fetch(`${API_BASE}/models`, {
         method: 'POST',

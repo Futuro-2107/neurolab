@@ -36,7 +36,8 @@ type TrainingJob = {
   created_at: string;
 };
 
-const API_BASE = 'http://localhost:8000/api/v1';
+// URL dinámica basada en las variables de entorno de Vite (Render / Local)
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
 export default function Training() {
   const [datasets, setDatasets] = useState<DatasetRecord[]>([]);
@@ -113,7 +114,7 @@ export default function Training() {
         name: name.trim(),
         architecture,
         dataset_id: Number(datasetId),
-        project_id: projectId ? Number(projectId) : null, // <-- Enviamos el project_id a FastAPI
+        project_id: projectId ? Number(projectId) : null,
         epochs: Number(epochs),
         batch_size: Number(batch),
         optimizer
@@ -181,17 +182,17 @@ export default function Training() {
               <input value={name} onChange={e => setName(e.target.value)} placeholder="Ej. Prueba de clasificación"/>
             </label>
 
-<label>
-  Proyecto Asociado
-  <select value={projectId || ''} onChange={e => setProjectId(Number(e.target.value) || null)}>
-    <option value="">Seleccionar proyecto</option>
-    {projects.map(proj => (
-      <option key={proj.id} value={proj.id}>
-        {proj.name}
-      </option>
-    ))}
-  </select>
-</label>
+            <label>
+              Proyecto Asociado
+              <select value={projectId || ''} onChange={e => setProjectId(Number(e.target.value) || null)}>
+                <option value="">Seleccionar proyecto</option>
+                {projects.map(proj => (
+                  <option key={proj.id} value={proj.id}>
+                    {proj.name}
+                  </option>
+                ))}
+              </select>
+            </label>
             
             <label>
               Arquitectura

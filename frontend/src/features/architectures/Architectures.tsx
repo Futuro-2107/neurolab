@@ -10,7 +10,9 @@ const families = [
   {name:'GAN',short:'GAN',desc:'Combina un generador y un discriminador que compiten durante el aprendizaje.',use:'Generación de muestras y aumento de datos.'}
 ];
 const layerOptions=['Dense','Dropout','Flatten','Conv2D','MaxPooling2D','LSTM','GRU','SimpleRNN','Salida'];
-const API_BASE = 'http://localhost:8000/api/v1';
+
+// URL dinámica basada en las variables de entorno de Vite (Render / Local)
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
 type ArchitectureRecord = {
   id: number;

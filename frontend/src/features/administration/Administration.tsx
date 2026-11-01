@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
-import { LockKeyhole, Settings2, ShieldCheck, Users, Plus, Trash2, Save } from 'lucide-react';
+import { LockKeyhole, Settings2, ShieldCheck, Users, Plus, Save } from 'lucide-react';
 import { Button, PageIntro, Panel } from '../../components/ui/Elements';
 
 type User = { id: number; full_name: string; email: string; role: string; is_active: boolean; created_at: string };
 type AuditEvent = { id: number; actor: string; action: string; resource: string; details: any; created_at: string };
 
-const API_BASE = 'http://localhost:8000/api/v1';
+// URL dinámica basada en las variables de entorno de Vite
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
 export default function Administration() {
   const [tab, setTab] = useState('Usuarios');
-  const [users, setUsers] = useState<User[]>([]);
   const [audit, setAudit] = useState<AuditEvent[]>([]);
   const [limit, setLimit] = useState(1);
   const [notifications, setNotifications] = useState(true);
@@ -20,7 +20,7 @@ export default function Administration() {
   // Campos para crear usuario
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('password123'); // Password por defecto o dinámico
+  const [password, setPassword] = useState('password123');
   const [role, setRole] = useState('Investigador');
   const [message, setMessage] = useState('');
 
@@ -32,13 +32,10 @@ export default function Administration() {
 
   const fetchUsers = async () => {
     try {
-      // Como no tenemos endpoint directo de lista de usuarios en el main.py proporcionado, 
-      // puedes usar un endpoint de usuarios o el reporte de auditoría/dashboard. 
-      // Nota: Si deseas listar usuarios, puedes agregar @app.get("/api/v1/users") en tu main.py.
       const res = await fetch(`${API_BASE}/audit?limit=200`);
-      // O si creas el endpoint GET /api/v1/users en el backend:
-      // const res = await fetch(`${API_BASE}/users`);
-      // Por ahora simulamos la carga o consultamos endpoints disponibles:
+      if (res.ok) {
+        // Lógica de carga de usuarios si aplica
+      }
     } catch (error) {
       console.error('Error al cargar datos', error);
     }
@@ -78,7 +75,7 @@ export default function Administration() {
         setFullName('');
         setEmail('');
         setShowForm(false);
-        fetchAudit(); // Actualiza la auditoría del backend
+        fetchAudit();
       } else {
         const err = await res.json();
         setMessage(err.detail || 'Error al registrar usuario.');
@@ -90,7 +87,6 @@ export default function Administration() {
 
   const savePrefs = async () => {
     try {
-      // Registrar evento de preferencia en la auditoría del backend
       await fetch(`${API_BASE}/audit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -169,7 +165,7 @@ export default function Administration() {
                 </label>
                 <label>
                   Correo electrónico
-                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="usuario@empresa.com" />
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="correo@neurolab.com" />
                 </label>
               </div>
               <div className="form-row">

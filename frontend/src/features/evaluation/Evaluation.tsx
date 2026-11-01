@@ -22,7 +22,8 @@ type TrainingJob = {
   created_at: string;
 };
 
-const API_BASE = 'http://localhost:8000/api/v1';
+// URL dinámica basada en las variables de entorno de Vite (Render / Local)
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
 export default function Evaluation() {
   const [jobs, setJobs] = useState<TrainingJob[]>([]);

@@ -12,7 +12,8 @@ type Project = {
   created_at?: string;
 };
 
-const API_BASE = 'http://localhost:8000/api/v1';
+// URL dinámica basada en las variables de entorno de Vite (Render / Local)
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
 export default function Projects() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -64,7 +65,6 @@ export default function Projects() {
     if (!name.trim()) return; 
 
     try {
-      // Estructura limpia ajustada estrictamente a la BD PostgreSQL
       const payload = {
         name: name.trim(),
         description: description.trim(),
