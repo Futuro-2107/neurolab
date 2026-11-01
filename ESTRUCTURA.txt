@@ -1,0 +1,18 @@
+NEUROLAB ENTERPRISE
+
+frontend/  -> React + TypeScript + Vite (interfaz de usuario)
+  src/app/              -> composición y rutas
+  src/components/       -> componentes compartidos y layout
+  src/features/         -> módulos funcionales
+  src/services/         -> cliente API y servicios del frontend
+  src/styles/           -> estilos
+  src/types/            -> tipos TypeScript
+
+backend/   -> FastAPI (API y persistencia)
+  app/main.py           -> endpoints de la API
+  app/database.py      -> conexión a base de datos
+  app/models.py        -> modelos SQLAlchemy
+  app/security.py      -> seguridad/autenticación
+  app/config.py        -> configuración
+  requirements.txt      -> dependencias Python
+  .env.example          -> variables de entorno de ejemplo

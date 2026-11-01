@@ -1,0 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import './modules.css';
+:root{font-family:'DM Sans',Inter,system-ui,sans-serif;color:#e7ebf6;background:#0b1020;font-synthesis:none;text-rendering:optimizeLegibility;font-smooth:always;font-weight:400;--bg:#0b1020;--panel:#11192b;--panel-2:#141e32;--border:#222d43;--muted:#8b96ad;--text:#e7ebf6;--accent:#718bff;--purple:#a091ff;--green:#4dd7a0;--yellow:#f2c66d;--red:#ff7c88}
+*{box-sizing:border-box}body{margin:0;min-width:320px;min-height:100vh;background:radial-gradient(ellipse at 70% -15%,rgba(75,95,181,.12),transparent 35%),var(--bg)}button,input,select,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}a{color:inherit;text-decoration:none}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #8ea1ff;outline-offset:2px}::selection{background:#657dff66}
+
