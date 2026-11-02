@@ -19,7 +19,13 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(title="NeuroLab Enterprise API", version="1.0.0", description="API REST para los módulos de NeuroLab Enterprise", lifespan=lifespan)
-app.add_middleware(CORSMiddleware, allow_origins=[x.strip() for x in settings.frontend_origins.split(",")], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # <--- Permite cualquier origen (Vercel, localhost, etc.)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 oauth = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
 class Register(BaseModel): full_name: str = Field(min_length=2, max_length=160); email: EmailStr; password: str = Field(min_length=8, max_length=128); role: str = "Investigador"
