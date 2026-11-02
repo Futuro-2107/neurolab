@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ArrowUpRight, Plus, Search } from 'lucide-react';
+import { ArrowUpRight, Plus, Search, Sparkles } from 'lucide-react';
 
 export function PageIntro({ eyebrow, title, description, action }: { eyebrow?: string; title: string; description: string; action?: ReactNode }) {
   return <div className="page-intro"><div>{eyebrow && <div className="eyebrow">{eyebrow}</div>}<h2>{title}</h2><p>{description}</p></div>{action}</div>;

@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { LockKeyhole, Settings2, ShieldCheck, Users, Plus, Save } from 'lucide-react';
 import { Button, PageIntro, Panel } from '../../components/ui/Elements';
 
-type User = { id: number; full_name: string; email: string; role: string; is_active: boolean; created_at: string };
 type AuditEvent = { id: number; actor: string; action: string; resource: string; details: any; created_at: string };
 
 // URL dinámica basada en las variables de entorno de Vite
