@@ -19,13 +19,15 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(title="NeuroLab Enterprise API", version="1.0.0", description="API REST para los módulos de NeuroLab Enterprise", lifespan=lifespan)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # <--- Permite cualquier origen (Vercel, localhost, etc.)
+    allow_origins=["*"],  # Permite cualquier origen (Vercel, localhost, etc.)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 oauth = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
 class Register(BaseModel): full_name: str = Field(min_length=2, max_length=160); email: EmailStr; password: str = Field(min_length=8, max_length=128); role: str = "Investigador"
@@ -113,6 +115,19 @@ def serialize(obj):
             "metrics": getattr(obj, "metrics", {}) if hasattr(obj, "metrics") else {},
             "created_at": obj.created_at.isoformat() if obj.created_at else None
         }
+
+    if isinstance(obj, models.ModelRecord):
+        return {
+            "id": obj.id,
+            "name": obj.name,
+            "family": obj.family,
+            "version": obj.version,
+            "training_job_id": obj.training_job_id,
+            "accuracy": obj.accuracy,
+            "status": obj.status,
+            "metadata_json": getattr(obj, "metadata_json", {}),
+            "created_at": obj.created_at.isoformat() if obj.created_at else None
+        }
     
     data = {c.name: getattr(obj, c.name, None) for c in obj.__table__.columns}
     for k, v in data.items():
@@ -162,13 +177,6 @@ def create_project(data: ProjectIn, db: Session = Depends(get_db)):
     audit(db, "Proyecto creado", "projects", {"id": obj.id, "name": data.name})
     return serialize(obj)
 
-@app.patch("/api/v1/projects/{item_id}")
-def update_project(item_id: int, data: ProjectIn, db: Session = Depends(get_db)):
-    obj = db.get(models.Project, item_id)
-    if not obj: raise HTTPException(404, "Proyecto no encontrado")
-    obj.name = data.name; obj.description = data.description; obj.owner = data.owner; obj.family = data.family; obj.status = data.status
-    db.commit(); db.refresh(obj); audit(db, "Proyecto actualizado", "projects", {"id": item_id}); return serialize(obj)
-
 @app.delete("/api/v1/projects/{item_id}", status_code=204)
 def delete_project(item_id: int, db: Session = Depends(get_db)):
     obj = db.get(models.Project, item_id)
@@ -212,7 +220,6 @@ def delete_architecture(item_id: int, db: Session = Depends(get_db)):
 @app.get("/api/v1/trainings")
 def trainings(db: Session = Depends(get_db)): return [serialize(x) for x in db.scalars(select(models.TrainingJob).order_by(models.TrainingJob.created_at.desc()))]
 
-# --- BACKGROUND TASK PARA PROCESAR Y GUARDAR ÉPOCA POR ÉPOCA REALMENTE ---
 async def process_training_epochs(training_id: int):
     db = next(get_db())
     try:
@@ -227,8 +234,7 @@ async def process_training_epochs(training_id: int):
         loss_history = []
 
         for epoch in range(1, total_epochs + 1):
-            await asyncio.sleep(0.3)  # Tiempo de procesamiento por época
-
+            await asyncio.sleep(0.3)
             progress = int((epoch / total_epochs) * 100)
             current_loss = round(1.0 - (epoch / total_epochs) * 0.78, 4)
             current_acc = round(0.50 + (epoch / total_epochs) * 0.448, 4)
@@ -236,14 +242,12 @@ async def process_training_epochs(training_id: int):
             loss_history.append({"epoch": epoch, "loss": current_loss, "accuracy": current_acc})
 
             obj.progress = progress
-            db.commit() # Commit real en Supabase por cada época
+            db.commit()
 
-        # Finalizar entrenamiento
         obj.status = "Completado"
         obj.progress = 100
         db.commit()
 
-        # Guardar en la tabla evaluations
         eval_record = models.Evaluation(
             training_id=obj.id,
             accuracy=0.948,
@@ -254,7 +258,6 @@ async def process_training_epochs(training_id: int):
         )
         db.add(eval_record)
         db.commit()
-
         audit(db, "Entrenamiento completado y guardado", "trainings", {"id": obj.id, "epochs": total_epochs})
     except Exception as e:
         db.rollback()
@@ -288,12 +291,8 @@ def create_training(data: TrainingIn, background_tasks: BackgroundTasks, db: Ses
 
     obj = models.TrainingJob(**db_training_data)
     db.add(obj); db.commit(); db.refresh(obj)
-    
     audit(db, "Entrenamiento registrado", "trainings", {"id": obj.id, "name": data.name})
-    
-    # Iniciar la tarea de procesamiento real en segundo plano
     background_tasks.add_task(process_training_epochs, obj.id)
-    
     return serialize(obj)
 
 @app.get("/api/v1/models")

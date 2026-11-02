@@ -62,6 +62,7 @@ class TrainingJob(Base):
 
 class ModelRecord(Base):
     __tablename__ = "models"
+    
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(255))
     family: Mapped[str] = mapped_column(String(100), default="CNN")
@@ -69,6 +70,7 @@ class ModelRecord(Base):
     accuracy: Mapped[float] = mapped_column(Float, default=0.0)
     training_job_id: Mapped[int | None] = mapped_column("training_id", ForeignKey("trainings.id", ondelete="SET NULL"), nullable=True)
     status: Mapped[str] = mapped_column(String(50), default="En revisión")
+    metadata_json: Mapped[dict | None] = mapped_column(JSON, default=dict, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
 
 class AuditEvent(Base):

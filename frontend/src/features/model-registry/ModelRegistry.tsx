@@ -22,7 +22,6 @@ type TrainingJob = {
   name: string;
 };
 
-// URL dinámica basada en las variables de entorno de Vite (Render / Local)
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
 export default function ModelRegistry() {
@@ -33,7 +32,6 @@ export default function ModelRegistry() {
   const [detail, setDetail] = useState<number | null>(null);
   const [showForm, setShowForm] = useState(false);
   
-  // Campos del formulario
   const [name, setName] = useState('');
   const [project, setProject] = useState('');
   const [family, setFamily] = useState('CNN');
