@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { Activity, Atom, Boxes, BrainCircuit, ChartNoAxesCombined, Database, FileBarChart, Gauge, GraduationCap, Layers3, ShieldCheck } from 'lucide-react';
 
+// Todos los elementos del menú se muestran siempre
 const items = [
   { to: '/', label: 'Inicio', icon: Gauge },
   { to: '/projects', label: 'Proyectos', icon: Boxes },
@@ -15,10 +16,32 @@ const items = [
 ];
 
 export default function Sidebar() {
-  return <aside className="sidebar">
-    <div className="brand"><div className="brand-mark"><Atom size={23} /></div><div className="brand-text"><b>NeuroLab</b><span>ENTERPRISE</span></div></div>
-    <div className="workspace-label">MENÚ PRINCIPAL</div>
-    <nav className="side-nav">{items.map(({ to, label, icon: Icon }) => <NavLink key={to} to={to} end={to === '/'} title={label} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}><Icon size={18}/><span>{label}</span></NavLink>)}</nav>
-    <div className="sidebar-bottom"><div className="workspace-note">Espacio de trabajo vacío<br/>Agrega tu propia información.</div></div>
-  </aside>;
+  const userRole = localStorage.getItem('user_role') || 'Observador';
+
+  return (
+    <aside className="sidebar">
+      <div className="brand">
+        <div className="brand-mark"><Atom size={23} /></div>
+        <div className="brand-text"><b>NeuroLab</b><span>ENTERPRISE</span></div>
+      </div>
+      <div className="workspace-label">MENÚ PRINCIPAL ({userRole})</div>
+      <nav className="side-nav">
+        {items.map(({ to, label, icon: Icon }) => (
+          <NavLink 
+            key={to} 
+            to={to} 
+            end={to === '/'} 
+            title={label} 
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+          >
+            <Icon size={18}/>
+            <span>{label}</span>
+          </NavLink>
+        ))}
+      </nav>
+      <div className="sidebar-bottom">
+        <div className="workspace-note">NeuroLab Enterprise<br/>Control de acceso activo.</div>
+      </div>
+    </aside>
+  );
 }

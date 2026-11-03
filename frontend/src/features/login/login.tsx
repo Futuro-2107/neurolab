@@ -20,6 +20,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     setLoading(true);
 
     try {
+      // 1. Autenticar usuario y obtener Token
       const response = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: {
@@ -34,8 +35,27 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         throw new Error(data.detail || 'Correo o contraseña incorrectos.');
       }
 
-      localStorage.setItem('access_token', data.access_token);
-      onLoginSuccess(data.access_token);
+      const token = data.access_token;
+      localStorage.setItem('access_token', token);
+
+      // 2. Consultar el perfil (/auth/me) para sincronizar el Rol en localStorage
+      const profileResponse = await fetch(`${API_BASE}/auth/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (profileResponse.ok) {
+        const userData = await profileResponse.json();
+        // Guardamos el rol exacto (ej. "Administrador")
+        localStorage.setItem('user_role', userData.role);
+      } else {
+        // Fallback por seguridad
+        localStorage.setItem('user_role', 'Observador');
+      }
+
+      // 3. Notificar inicio de sesión exitoso
+      onLoginSuccess(token);
     } catch (err: any) {
       setError(err.message || 'Error de conexión con el servidor.');
     } finally {

@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from .config import settings
 from .database import Base, engine, get_db
 from . import models
-from .security import create_token, hash_password, verify_password
+from .security import create_token, hash_password, verify_password, RoleChecker, auth_user
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -22,7 +22,7 @@ app = FastAPI(title="NeuroLab Enterprise API", version="1.0.0", description="API
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Permite cualquier origen (Vercel, localhost, etc.)
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -135,14 +135,6 @@ def serialize(obj):
             data[k] = v.isoformat()
     return data
 
-def auth_user(token=Depends(oauth), db: Session = Depends(get_db)):
-    if not token: return None
-    try:
-        email = jwt.decode(token, settings.secret_key, algorithms=["HS256"]).get("sub")
-        user = db.scalar(select(models.User).where(models.User.email == email)) if email else None
-        return user if user and user.is_active else None
-    except JWTError: return None
-
 @app.get("/")
 def root(): return {"name": "NeuroLab Enterprise API", "status": "ok", "docs": "/docs"}
 
@@ -171,51 +163,51 @@ def me(user=Depends(auth_user)):
 def projects(db: Session = Depends(get_db)): return [serialize(x) for x in db.scalars(select(models.Project).order_by(models.Project.created_at.desc()))]
 
 @app.post("/api/v1/projects", status_code=201)
-def create_project(data: ProjectIn, db: Session = Depends(get_db)):
+def create_project(data: ProjectIn, db: Session = Depends(get_db), current_user: models.User = Depends(RoleChecker(["Administrador", "Investigador"]))):
     db_data = {"name": data.name, "description": data.description, "owner": data.owner, "family": data.family, "status": data.status}
     obj = models.Project(**db_data); db.add(obj); db.commit(); db.refresh(obj)
-    audit(db, "Proyecto creado", "projects", {"id": obj.id, "name": data.name})
+    audit(db, "Proyecto creado", "projects", {"id": obj.id, "name": data.name}, current_user.email)
     return serialize(obj)
 
 @app.delete("/api/v1/projects/{item_id}", status_code=204)
-def delete_project(item_id: int, db: Session = Depends(get_db)):
+def delete_project(item_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(RoleChecker(["Administrador"]))):
     obj = db.get(models.Project, item_id)
     if not obj: raise HTTPException(404, "Proyecto no encontrado")
-    db.delete(obj); db.commit(); audit(db, "Proyecto eliminado", "projects", {"id": item_id})
+    db.delete(obj); db.commit(); audit(db, "Proyecto eliminado", "projects", {"id": item_id}, current_user.email)
 
 @app.get("/api/v1/datasets")
 def datasets(db: Session = Depends(get_db)): return [serialize(x) for x in db.scalars(select(models.Dataset).order_by(models.Dataset.created_at.desc()))]
 
 @app.post("/api/v1/datasets", status_code=201)
-def create_dataset(data: DatasetIn, db: Session = Depends(get_db)):
+def create_dataset(data: DatasetIn, db: Session = Depends(get_db), current_user: models.User = Depends(RoleChecker(["Administrador", "Investigador"]))):
     if data.project_id and not db.get(models.Project, data.project_id): raise HTTPException(404, "Proyecto asociado no encontrado")
     db_dataset_data = {"name": data.name, "file_type": data.file_type, "size_bytes": str(data.size_bytes), "record_count": data.record_count, "version": data.version, "status": data.status}
     obj = models.Dataset(**db_dataset_data); db.add(obj); db.commit(); db.refresh(obj)
-    audit(db, "Dataset registrado", "datasets", {"id": obj.id, "name": obj.name})
+    audit(db, "Dataset registrado", "datasets", {"id": obj.id, "name": obj.name}, current_user.email)
     return serialize(obj)
 
 @app.delete("/api/v1/datasets/{item_id}", status_code=204)
-def delete_dataset(item_id: int, db: Session = Depends(get_db)):
+def delete_dataset(item_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(RoleChecker(["Administrador"]))):
     obj = db.get(models.Dataset, item_id)
     if not obj: raise HTTPException(404, "Dataset no encontrado")
-    db.delete(obj); db.commit(); audit(db, "Dataset eliminado", "datasets", {"id": item_id})
+    db.delete(obj); db.commit(); audit(db, "Dataset eliminado", "datasets", {"id": item_id}, current_user.email)
 
 @app.get("/api/v1/architectures")
 def architectures(db: Session = Depends(get_db)): return [serialize(x) for x in db.scalars(select(models.Architecture).order_by(models.Architecture.created_at.desc()))]
 
 @app.post("/api/v1/architectures", status_code=201)
-def create_architecture(data: ArchitectureIn, db: Session = Depends(get_db)):
+def create_architecture(data: ArchitectureIn, db: Session = Depends(get_db), current_user: models.User = Depends(RoleChecker(["Administrador", "Investigador"]))):
     if len(data.layers) < 2: raise HTTPException(422, "La arquitectura requiere al menos dos capas")
     db_arch_data = {"name": data.name, "family": data.family, "layers": data.layers, "parameters_estimate": data.parameters_estimate, "project_id": data.project_id}
     obj = models.Architecture(**db_arch_data); db.add(obj); db.commit(); db.refresh(obj)
-    audit(db, "Arquitectura guardada", "architectures", {"id": obj.id, "name": obj.name})
+    audit(db, "Arquitectura guardada", "architectures", {"id": obj.id, "name": obj.name}, current_user.email)
     return serialize(obj)
 
 @app.delete("/api/v1/architectures/{item_id}", status_code=204)
-def delete_architecture(item_id: int, db: Session = Depends(get_db)):
+def delete_architecture(item_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(RoleChecker(["Administrador"]))):
     obj = db.get(models.Architecture, item_id)
     if not obj: raise HTTPException(404, "Arquitectura no encontrada")
-    db.delete(obj); db.commit(); audit(db, "Arquitectura eliminada", "architectures", {"id": item_id})
+    db.delete(obj); db.commit(); audit(db, "Arquitectura eliminada", "architectures", {"id": item_id}, current_user.email)
 
 @app.get("/api/v1/trainings")
 def trainings(db: Session = Depends(get_db)): return [serialize(x) for x in db.scalars(select(models.TrainingJob).order_by(models.TrainingJob.created_at.desc()))]
@@ -269,7 +261,7 @@ async def process_training_epochs(training_id: int):
         db.close()
 
 @app.post("/api/v1/trainings", status_code=201)
-def create_training(data: TrainingIn, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+def create_training(data: TrainingIn, background_tasks: BackgroundTasks, db: Session = Depends(get_db), current_user: models.User = Depends(RoleChecker(["Administrador", "Investigador"]))):
     if data.dataset_id and not db.get(models.Dataset, data.dataset_id): raise HTTPException(404, "Dataset no encontrado")
     
     db_training_data = {
@@ -291,7 +283,7 @@ def create_training(data: TrainingIn, background_tasks: BackgroundTasks, db: Ses
 
     obj = models.TrainingJob(**db_training_data)
     db.add(obj); db.commit(); db.refresh(obj)
-    audit(db, "Entrenamiento registrado", "trainings", {"id": obj.id, "name": data.name})
+    audit(db, "Entrenamiento registrado", "trainings", {"id": obj.id, "name": data.name}, current_user.email)
     background_tasks.add_task(process_training_epochs, obj.id)
     return serialize(obj)
 
@@ -299,14 +291,14 @@ def create_training(data: TrainingIn, background_tasks: BackgroundTasks, db: Ses
 def model_list(db: Session = Depends(get_db)): return [serialize(x) for x in db.scalars(select(models.ModelRecord).order_by(models.ModelRecord.created_at.desc()))]
 
 @app.post("/api/v1/models", status_code=201)
-def create_model(data: ModelIn, db: Session = Depends(get_db)):
-    obj = models.ModelRecord(**data.model_dump()); db.add(obj); db.commit(); db.refresh(obj); audit(db, "Modelo registrado", "models", {"id": obj.id}); return serialize(obj)
+def create_model(data: ModelIn, db: Session = Depends(get_db), current_user: models.User = Depends(RoleChecker(["Administrador", "Investigador"]))):
+    obj = models.ModelRecord(**data.model_dump()); db.add(obj); db.commit(); db.refresh(obj); audit(db, "Modelo registrado", "models", {"id": obj.id}, current_user.email); return serialize(obj)
 
 @app.delete("/api/v1/models/{item_id}", status_code=204)
-def delete_model(item_id: int, db: Session = Depends(get_db)):
+def delete_model(item_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(RoleChecker(["Administrador"]))):
     obj = db.get(models.ModelRecord, item_id)
     if not obj: raise HTTPException(404, "Modelo no encontrado")
-    db.delete(obj); db.commit(); audit(db, "Modelo eliminado", "models", {"id": item_id})
+    db.delete(obj); db.commit(); audit(db, "Modelo eliminado", "models", {"id": item_id}, current_user.email)
 
 @app.get("/api/v1/audit")
 def audit_list(limit: int = Query(100, ge=1, le=500), db: Session = Depends(get_db)): return [serialize(x) for x in db.scalars(select(models.AuditEvent).order_by(models.AuditEvent.created_at.desc()).limit(limit))]
